@@ -32,11 +32,11 @@ public class Main {
 
         final Jedis publisherJedis = jedisPool.getResource();
 
+//        Subs subs = new Subs(CHANNEL_NAME);
+//        subs.subscriber();
         Publisher publisher = new Publisher(CHANNEL_NAME);
         publisher.publish();
 
-        while (messageBroker.getToContinue()) {
-        }
         thread.join();
 
         jedisPool.returnResource(subscriberJedis);
