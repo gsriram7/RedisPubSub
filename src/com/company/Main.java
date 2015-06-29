@@ -32,7 +32,8 @@ public class Main {
 
         final Jedis publisherJedis = jedisPool.getResource();
 
-        new Publisher(publisherJedis, CHANNEL_NAME).start();
+        Publisher publisher = new Publisher(CHANNEL_NAME);
+        publisher.publish();
 
         while (messageBroker.getToContinue()) {
         }

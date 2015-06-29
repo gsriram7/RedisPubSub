@@ -1,45 +1,44 @@
 package com.company;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 public class Publisher {
-
-    private static final Logger logger = LoggerFactory.getLogger(Publisher.class);
 
     private final Jedis publisherJedis;
 
     private final String channel;
+    private Thread[] threads = new Thread[5];
 
-    public Publisher(Jedis publisherJedis, String channel) {
-        this.publisherJedis = publisherJedis;
+    public Publisher(String channel) {
+        final JedisPoolConfig poolConfig = new JedisPoolConfig();
+        final JedisPool jedisPool = new JedisPool(poolConfig, "localhost", 6379, 0);
+        this.publisherJedis = jedisPool.getResource();
         this.channel = channel;
     }
 
-    public void start() {
+    public void publish() {
+
         System.out.println("Type your message (quit for terminate)");
-        try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-
-            boolean toContinue = true;
-            while (toContinue) {
-                String line = reader.readLine();
-
-                if (!"quit".equals(line)) {
-                    publisherJedis.publish(channel, line);
-                } else {
-                    publisherJedis.publish(channel, line);
-                    toContinue = false;
+        for (Thread thread : threads) {
+            thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    for (int i = 0; i <= 2; i++) {
+                        publisherJedis.publish(channel, "Message " + i);
+                    }
+                    publisherJedis.publish(channel, "quit");
                 }
+            });
+            thread.start();
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-
-        } catch (IOException e) {
-            logger.error("IO failure while reading input, e");
         }
+
     }
+
 }
