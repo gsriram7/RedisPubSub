@@ -1,16 +1,24 @@
 package com.company;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import redis.clients.jedis.JedisPubSub;
 
 public class Subscriber extends JedisPubSub {
 
-    private static Logger logger = LoggerFactory.getLogger(Subscriber.class);
+    private MessageBroker messageBroker;
+
+    public Subscriber(MessageBroker messageBroker) {
+        this.messageBroker = messageBroker;
+    }
 
     @Override
     public void onMessage(String channel, String message) {
         System.out.println(message);
-        logger.info("Message received. Channel: {}, Msg: {}", channel, message);
+        System.out.println("Message received. Channel: " + channel + ", Msg: " + message);
+        if ("quit".equals(message)) {
+            unsubscribe();
+            System.out.println("Unsubing");
+            messageBroker.setToContinue(false);
+        }
     }
 
     @Override
@@ -25,7 +33,7 @@ public class Subscriber extends JedisPubSub {
 
     @Override
     public void onUnsubscribe(String channel, int subscribedChannels) {
-
+        System.out.println("Unsubing222");
     }
 
     @Override

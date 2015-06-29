@@ -1,7 +1,5 @@
 package com.company;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -10,33 +8,36 @@ public class Main {
 
     public static final String CHANNEL_NAME = "commonChannel";
 
-    private static Logger logger = LoggerFactory.getLogger(Main.class);
-
     public static void main(String[] args) throws Exception {
 
         final JedisPoolConfig poolConfig = new JedisPoolConfig();
         final JedisPool jedisPool = new JedisPool(poolConfig, "localhost", 6379, 0);
         final Jedis subscriberJedis = jedisPool.getResource();
-        final Subscriber subscriber = new Subscriber();
+        MessageBroker messageBroker = new MessageBroker(true);
+        final Subscriber subscriber = new Subscriber(messageBroker);
 
-        new Thread(new Runnable() {
+        Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    logger.info("Subscribing to \"commonChannel\". This thread will be blocked.");
+                    System.out.println("Subscribing to \"commonChannel\". This thread will be blocked.");
                     subscriberJedis.subscribe(subscriber, CHANNEL_NAME);
-                    logger.info("Subscription ended.");
+                    System.out.println("Subscription ended.");
                 } catch (Exception e) {
-                    logger.error("Subscribing failed.", e);
+                    System.out.println("Subscribing failed. " + e);
                 }
             }
-        }).start();
+        });
+        thread.start();
 
         final Jedis publisherJedis = jedisPool.getResource();
 
         new Publisher(publisherJedis, CHANNEL_NAME).start();
 
-        subscriber.unsubscribe();
+        while (messageBroker.getToContinue()) {
+        }
+        thread.join();
+
         jedisPool.returnResource(subscriberJedis);
         jedisPool.returnResource(publisherJedis);
     }

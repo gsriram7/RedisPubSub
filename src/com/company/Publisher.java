@@ -22,17 +22,19 @@ public class Publisher {
     }
 
     public void start() {
-        logger.info("Type your message (quit for terminate)");
+        System.out.println("Type your message (quit for terminate)");
         try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 
-            while (true) {
+            boolean toContinue = true;
+            while (toContinue) {
                 String line = reader.readLine();
 
                 if (!"quit".equals(line)) {
                     publisherJedis.publish(channel, line);
                 } else {
-                    break;
+                    publisherJedis.publish(channel, line);
+                    toContinue = false;
                 }
             }
 
